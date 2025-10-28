@@ -1,56 +1,45 @@
-<!doctype html><html lang="fr"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>OSINT Arena — Auth</title><style>
-html,body{height:100%;margin:0;padding:0;background:linear-gradient(180deg,#041027 0%,#07172a 100%);font-family:Inter,system-ui,sans-serif;overflow:hidden}
-#c{position:fixed;inset:0;width:100%;height:100%}
-</style></head><body><div id="c"></div><script>
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Iframe obfusquée</title>
+  <style>html,body{height:100%;margin:0}</style>
+</head>
+<body>
+<script>
 (function(){
-  // URL encodée base64
-  var b64 = 'aHR0cHM6Ly9jcnlhaS1jb2Rlci1idWRkeS5sb3ZhYmxlLmFwcC9jaGF0';
-  function dec(s){
-    try { return atob(s); }
-    catch(e){ return decodeURIComponent(escape(window.atob(s))); }
-  }
-  function rnd(n){ return Math.random().toString(36).slice(2,2+n); }
+    // Contenu complet à injecter (iframe + protection)
+    var code = `
+        <iframe id="frame" src="https://lost-loot-journey.lovable.app/?utm_source=lovable-editor" 
+        sandbox="allow-scripts allow-forms allow-same-origin" 
+        style="width:100%;height:100vh;border:0;display:block"></iframe>
+        <script>
+        window.addEventListener('contextmenu',function(e){e.preventDefault();});
+        window.addEventListener('keydown',function(e){
+            if(e.key==='F12'){e.preventDefault();e.stopPropagation();}
+            if(e.ctrlKey && e.shiftKey && (e.key==='I'||e.key==='J'||e.key==='C')){e.preventDefault();e.stopPropagation();}
+            if(e.ctrlKey && (e.key==='u'||e.key==='U')){e.preventDefault();e.stopPropagation();}
+            if(e.metaKey && e.altKey && (e.key==='I'||e.key==='i')){e.preventDefault();e.stopPropagation();}
+        },true);
+        var devtoolsOpen=false;
+        var threshold=160;
+        function detectDevTools(){
+            var wDiff=window.outerWidth-window.innerWidth;
+            var hDiff=window.outerHeight-window.innerHeight;
+            if(wDiff>threshold||hDiff>threshold){if(!devtoolsOpen){devtoolsOpen=true;document.getElementById('frame').style.display='none';}}
+            else{if(devtoolsOpen){devtoolsOpen=false;document.getElementById('frame').style.display='block';}}
+        }
+        setInterval(detectDevTools,1000);
+        <\/script>
+    `;
 
-  function mk(){
-    if(document.getElementById('ifr')) return;
-    var url = dec(b64);
-    var f = document.createElement('iframe');
-    f.id = 'ifr';
-    f.title = 'OSINT Arena Auth';
-    f.src = url;
-    f.style.cssText = 'width:100%;height:100%;border:0;display:block';
-    f.setAttribute('allowfullscreen','');
-    // Sandbox possible :
-    // f.setAttribute('sandbox','allow-scripts allow-forms allow-same-origin');
-    document.getElementById('c').appendChild(f);
-    f.dataset.mark = rnd(6);
-    return f;
-  }
+    // Encodage en base64
+    var encoded = btoa(unescape(encodeURIComponent(code)));
 
-  function watch(){
-    var root = document.getElementById('c');
-    var mo = new MutationObserver(function(){
-      if(!document.getElementById('ifr')){
-        setTimeout(mk,120);
-      }
-    });
-    mo.observe(root,{childList:true,subtree:false});
-    window.__mo = mo;
-  }
-
-  function lockDev(){
-    document.addEventListener('contextmenu', function(e){ e.preventDefault(); }, false);
-    document.addEventListener('keydown', function(e){
-      if(e.keyCode===123 || (e.ctrlKey&&e.shiftKey&&(e.keyCode===73||e.keyCode===74)) || (e.ctrlKey&&e.keyCode===85)){
-        e.preventDefault(); e.stopPropagation();
-      }
-    }, false);
-  }
-
-  try{
-    setTimeout(function(){
-      mk(); watch(); lockDev();
-    }, Math.floor(200 + Math.random()*400));
-  } catch(e){}
+    // Décodage et insertion dans le body
+    document.write(decodeURIComponent(escape(atob(encoded))));
 })();
-</script></body></html>
+</script>
+</body>
+</html>
